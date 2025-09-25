@@ -1,0 +1,180 @@
+\input{myarticlepreamble}
+\input{yliow}
+
+\begin{document}
+\topmatter
+
+\begin{tightlist}
+\li \url{http://en.wikipedia.org/wiki/Elevator}
+\li \url{http://science.howstuffworks.com/transport/engines-equipment/elevator1.htm}
+\end{tightlist}
+
+\section{Requirements}
+
+Assume a discrete time system where time is incremented by 0.1s.
+
+Here's the big picture:
+\begin{tightlist}
+  \li A user is someone using the elevator.
+  \li A pool is a container for users. There is one for each floor.
+  This simulates for instance users working on a floor.
+  \li On each floor, there's a queue for each elevator. 
+\end{tightlist}
+
+More details:
+
+\begin{itemize}
+  \item Users
+  \begin{tightlist}
+    \li There's a fixed total number of users. Initially all users are in the
+    pool at floor 0. (See Pool.)
+    \li Each user can keep track of the start time of queueing and end time of
+    reaching his/her destination floor.
+    \li Each user randomly decides to join a queue for an elevator ride.
+    \li Each user can decide is he/she enters an elevator only when
+    its going in his/her desired direction.
+    \li Each user will only request for a destination floor that is different
+    from his/her current floor.
+    \li Attributes:
+    \begin{tightlist}
+      \li floor (note that if the user is in the elevator, the floor value is
+      the value of the floor which he/she left -- it will be updated only
+      when he/she enters a different floor by leaving the elevator.)
+      \li state: in pool, in queue, in elevator
+      \li probability of deciding to enter elevator when it's in the wrong
+      direction
+      \li probability of entering queue
+      \li method to determine destination floor
+      \li start time
+      \li end time
+      \li total time
+      \li (Keep total list of activities?)
+    \end{tightlist}
+    \li State diagram:
+    \begin{Verbatim}
+      in pool i -----------> in queue i -------------> in elevator k
+                                                              |
+                                                              |
+      in pool j <---------------------------------------------+
+    \end{Verbatim}
+  \end{tightlist}
+    
+  \item Number of elevators
+  \item Number of floors
+  
+  \item Queue:
+  At each floor, there's a queue for users waiting to enter any
+  opened elevator. (Note that there's only one queue on each floor).
+  Initially all queues are empty.
+  \begin{tightlist}
+    \li A user can enqueue the queue at that floor.
+    \li Any user in the queue can leave the queue (not just the front).
+    This is to simulate the fact that a user wants to go up but the
+    elevator is going down and therefore the user can choose not to
+    enter the elevator.
+  \end{tightlist}
+  
+  \item Pool: At each floor, there's a container for users.
+  This simulates for instance people working at that floor
+  Initially all containers are empty except for the container at floor 0.
+  
+  \item A user can leave a pool and join a queue (by enqueue) at the same
+  floor. At that point the user must issue a request to go up/down in an
+  elevator.
+  \item A user can leave a queue (by dequeue) and enter an elevator when the
+  elevator is at that floor, has stopped, door is opened, and the
+  resulting weight has not exceeded the capacity of the elevator.
+  [What about direction? Can a user request for down but enter if the
+  elevator is going up? Should there be two queues, an up and a down queue?]
+  \item A user can make one request for a floor while in the elevator (once?)
+  \item A user must leave the elevator when the elevator has reached the
+  user's requested floor, the elevator has stopped, and the door is open.
+  When the user leaves the elevator, he/she enters the pool at that floor.
+  
+  \item Elevators:
+  \begin{tightlist}
+    \li can go up and down, open/close doors when they arrive at a
+    floor.
+    \li Note that an elevator receives a command to go from floor to floor.
+    The elevator does not receive a list of commands.
+    \li This is the same for opening and closing the door.
+    \li In other words, once an elevator receives a command, it acts and
+    will only begin receiving a command when the current one is completed.
+    This is the case except for an emergency command (interrupt)
+    which is not implemented yet.
+    \li For each elevator there's a direction light for every floor telling
+    the user which direction of the elevator.
+    [WARNING: This light can be "up" even when the elevator is temporarily
+    stationary. ]
+    \li The elevator also has an direction indicator. The master
+    can turn in to "up" or "down" or "stationary"
+    (To the user, this corresponds to an lighted up arrow, lighted down
+    arrow, and up and down arrow both off.)
+  \end{tightlist}
+  
+  \item On each floor, there are two buttons, up and down. Call these
+  request buttons.
+  When a user press a request button, the information (floor, up/down) is
+  sent the the Master.
+  
+  \item In each elevator, there are buttons for each floor.
+  Call these floor buttons.
+  When a floor button is pressed, the information (elevator id, floor)
+  is sent to the Master.
+  
+  \item Master can send data to each elevator.
+  The data includes:
+  \begin{tightlist}
+    \li Query for floor number where an elevator is at.
+    (Floor only? Or include between floord?)
+    \li Query if the door is opened or closed (Door half open, etc?)
+    \li Query if the elevator is stationary, moving up, or moving down.
+    \li Query for total user weight. (Or assume user will not enter is
+    reach capacity?)
+    \li Issue command for elevator to close or open door.
+    \li Issue command for elevator to go to a floor.
+  \end{tightlist}
+  
+  \item Performance is measure by waiting time for users. This includes
+  waiting for the elevator to arrive and also time to reach destination.
+  (Why? Because an smart elevator can avoid opening for a customer
+  whieh is going up while elevator is going up while there's another
+  elevator going in the same direction.)
+  
+\end{itemize}
+
+\begin{console}
+VISUALIZATION
+
+
+\end{console}
+
+
+\newpage
+\section{Controller}
+
+A controller sends commands to elevators.
+Each elevator system in a building has only one controller.
+Note that the controller has the following information:
+\begin{itemize}
+  \item When a user press either the up or down button at the
+  elevator lobby on a floor, that data is sent to the controller.
+  \item When a user press a floor number
+  in an elevator, that data is sent to the controller.
+\end{itemize}
+
+\begin{Verbatim}
+class Controller
+{
+private:
+    bool up_[N];       // up[i] is true if the up button at floor i is pressed
+    bool down_[N];     // up[i] is true if the up button at floor i is pressed
+    bool floor_[E][N]; // floor[e][i] is true if floor i of elevator e is
+                       // pressed
+};
+\end{Verbatim}
+
+Controller also knows how much load an elevator is carrying and
+the capacity of the elevator.
+
+\end{document}

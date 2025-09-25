@@ -1,0 +1,17 @@
+class Clock
+{
+public:
+    Clock()
+        : time(0)
+    {}
+    void update()
+    {
+        time++;
+    }
+    int get_ticks() const
+    {
+        return time;
+    }
+private:
+    int time;
+};
